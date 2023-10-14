@@ -1,0 +1,141 @@
+import org.openqa.selenium.chrome.ChromeDriver;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebElement;
+
+public class Case1 {
+        
+		public static void main(String[] args) throws InterruptedException {
+        ChromeDriver driver = new ChromeDriver();        
+        driver.manage().window().maximize();	
+        driver.get("https://member.daraz.pk/user/login");
+        
+        doLogin(driver); //Need to login first, because Daraz does not allow to add products to cart without login
+        SearchMobiles(driver); // After login, start searching all SamSung phones
+        Thread.sleep(3000);
+        addToCart(driver); //Adding all the products to the cart
+		}
+		
+		// ---------- My Methods -----------\\
+		
+		
+		public static void doLogin(ChromeDriver driver) {			
+			
+			try {
+	            Thread.sleep(500);
+	        } catch (InterruptedException e) {
+	            e.printStackTrace();
+	        }
+			
+			WebElement username = driver.findElement(By.xpath("//*[@id=\"container\"]/div/div[2]/form/div/div[1]/div[1]/input"));
+	        username.sendKeys("03092298856");
+	        
+	        WebElement password = driver.findElement(By.xpath("//*[@id=\"container\"]/div/div[2]/form/div/div[1]/div[2]/input"));
+	        password.sendKeys("Adeel123");
+	        
+	        WebElement LoginButton = driver.findElement(By.xpath("//*[@id=\"container\"]/div/div[2]/form/div/div[2]/div[1]/button"));
+	        LoginButton.click();
+		}
+		
+		
+		public static void SearchMobiles(ChromeDriver driver) {
+			
+			try {
+	            Thread.sleep(2000); // wait 2 seconds for page to load
+	        } 
+			catch (InterruptedException e) {
+	            e.printStackTrace();
+	        }
+			
+			WebElement searchbar = driver.findElement(By.id("q"));
+	        searchbar.sendKeys("samsung mobiles");
+	        searchbar.sendKeys(Keys.RETURN);
+	        
+	        	        
+	        try {
+	            Thread.sleep(1000); // wait 2 seconds to load search results
+	        } 
+	        catch (InterruptedException e) {
+	            e.printStackTrace();
+	        }
+	        
+	        JavascriptExecutor js = (JavascriptExecutor) driver;
+	        int scrollPixels = 300; // Adjust this value as needed
+	        js.executeScript("window.scrollBy(0, " + scrollPixels + ");"); // scroll page little down to the price filters
+	        
+	        
+	        WebElement minPrice = driver.findElement(By.xpath("//*[@id=\"root\"]/div/div[2]/div/div/div[2]/div/div[5]/div[2]/div/input[1]")); // using xpath to locate the elements because there are no ID, Name or classes to these elements.
+	        WebElement maxPrice = driver.findElement(By.xpath("//*[@id=\"root\"]/div/div[2]/div/div/div[2]/div/div[5]/div[2]/div/input[2]"));
+	        WebElement btnApplyFilter = driver.findElement(By.xpath("//*[@id=\"root\"]/div/div[2]/div/div/div[2]/div/div[5]/div[2]/div/button"));
+	        
+	        minPrice.sendKeys("25000");        
+	        maxPrice.sendKeys("80000");   
+	        
+	        try {
+	            Thread.sleep(1000); // wait 1 second before clicking on apply filter button
+	        } 
+			catch (InterruptedException e) {
+	            e.printStackTrace();
+	        }
+	        
+	        btnApplyFilter.click();  
+	     
+		}
+	
+		
+		
+		public static void addToCart(ChromeDriver driver) throws InterruptedException {
+			List<WebElement> productLinks = driver.findElements(By.cssSelector("a[href*='daraz.pk/products']")); // Making a list of all Product Urls
+
+	        // Create an ArrayList to store the product URLs
+	        ArrayList<String> productUrls = new ArrayList<>(); // Saving all the Urls in array so that can be navigated to each product one by one
+
+	        int linkCount = 0;
+	        for (WebElement link : productLinks) {
+	        	try {
+	            productUrls.add(link.getAttribute("href"));
+	            linkCount = linkCount+1;
+	            System.out.println("("+linkCount+") Product URL: " + link.getAttribute("href"));
+	        	}
+	        	catch(org.openqa.selenium.StaleElementReferenceException e) {
+	        		
+	        	}
+	        }
+	        System.out.println("Array generated and links saved");
+	        System.out.println("Total no of URLS is :- "+productUrls.size());
+	        int noOfUrls = productUrls.size()-1;
+	        
+	        for(int i = 0; i<=noOfUrls; i++) 
+	        {
+	        	System.out.println("URL no "+(i+1)+" is :- "+productUrls.get(i));
+	        	
+	        	driver.get(productUrls.get(i));
+	        	System.out.println("Product no. "+(i+1)+" opened");
+	        	try {
+	        		WebElement addToCartButton = driver.findElement(By.className("pdp-button_theme_orange"));	            
+		            addToCartButton.click();
+		            System.out.println("Product no. "+(i+1)+" added to cart");
+		            Thread.sleep(3000);
+		            
+		            WebElement closePopup = driver.findElement(By.className("next-icon-close"));
+		            closePopup.click();         
+	        	}
+	        	
+	        	catch(org.openqa.selenium.NoSuchElementException e) {
+	        		System.out.println("Out of stock, cannot add to cart");
+	        	}        	
+	            
+	            
+	            driver.navigate().back();
+	            System.out.println("Back to PLP");
+	            System.out.println("\n");
+	        }
+	        
+	        driver.get("https://cart.daraz.pk/cart");
+	        driver.quit();   
+		}
+	}
